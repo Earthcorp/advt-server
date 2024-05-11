@@ -1,63 +1,65 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
-const {
-  generateToken,
-  verifyToken,
-  generateRefreshToken,
-} = require("../utils/authUtils");
+const secretKey = require("../configuration/jwtConfig");
+const jwt = require("jsonwebtoken");
+
+const generateToken = (user) => {
+  return jwt.sign({ id: user._id, role: user.role }, secretKey, {
+    expiresIn: "15d",
+  });
+};
 
 const registerController = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, photo } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role: "user",
+      photo,
     });
     const savedUser = await newUser.save();
-    res
-      .status(201)
-      .json({ message: "User created successfully", user: savedUser });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: savedUser,
+    });
   } catch (error) {
-    res.status(400).json({ message: message.error });
+    res.status(400).json({ success: false, message: message.error });
   }
 };
 
 const loginController = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      throw new Error("User not found");
+      return res.status(404).json({ message: "User not found" });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new Error("Invalid password");
+    const isPasswordMatch = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
+    if (!isPasswordMatch) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid credentials" });
     }
     const token = generateToken(user);
-    res.status(200).json({ user: user, token: token });
+
+    const { password, role, ...rest } = user._doc;
+
+    res.status(200).json({
+      status: true,
+      message: "Successfully login",
+      token,
+      data: { ...rest },
+      role,
+    });
   } catch (error) {
-    console.log(error.message);
-    res.status(401).json({ message: "Invalid credentials" });
+    return res.status(500).json({ status: false, message: "Failed to login" });
   }
 };
 
-const refreshToken = async (req, res) => {
-  try {
-    const { oldToken } = req.body;
-    const decodedToken = verifyToken(oldToken);
-    const existingUser = await User.findById(decodedToken.id);
-    if (!existingUser) {
-      throw new Error("User not found");
-    }
-    const newToken = generateRefreshToken(existingUser);
-    res.json({ token: newToken });
-  } catch (error) {
-    console.log(error.message);
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
-
-module.exports = { registerController, loginController, refreshToken };
+module.exports = { registerController, loginController };

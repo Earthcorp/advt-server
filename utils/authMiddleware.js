@@ -1,25 +1,34 @@
 const jwt = require("jsonwebtoken");
 const secretKey = require("../configuration/jwtConfig");
 
-function authenticateToken(req, res, next) {
-  const authHeader = req.header("Authorization");
-  if (!authHeader) {
-    return res.status(401).json({ message: "Unauthorized: Missing token" });
-  }
+const authenticate = async (req, res, next) => {
+  // get token from headers
+  const authToken = req.headers.authorization;
 
-  const [bearer, token] = authHeader.split(" ");
-  if (bearer !== "Bearer" || !token) {
+  // check token is exists
+  if (!authToken || !authToken.startsWith("Bearer")) {
     return res
       .status(401)
-      .json({ message: "Unauthorized: Invalid token format" });
+      .json({ success: false, message: "No token, authorization denied" });
   }
 
-  jwt.verify(token, secretKey, (err, user) => {
-    if (err)
-      return res.status(403).json({ message: "Forbidden: Invalid token" });
-    req.user = user;
-    next();
-  });
-}
+  try {
+    // console.log(authToken);
+    const token = authToken.split(" ")[1];
 
-module.exports = { authenticateToken };
+    // verify token
+    const decoded = jwt.verify(token, secretKey);
+
+    req.userId = decoded.id;
+    req.role = decoded.role;
+
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token is expired" });
+    }
+    return res.status(401).json({ success: false, message: "Invalid token" });
+  }
+};
+
+module.exports = { authenticate };

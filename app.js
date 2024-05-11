@@ -3,8 +3,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const connectDB = require("./configuration/dbConfig");
-const authRoutes = require("./routes/authRoute");
-const authenticateRoute = require("./routes/Authenticated");
+const authRoute = require("./routes/authRoute");
+const userRoute = require("./routes/userRoute");
 const { createAdminAccount } = require("./scripts/setup");
 
 require("dotenv").config();
@@ -25,8 +25,8 @@ app.get("/", (req, res) => {
 createAdminAccount();
 
 // routes
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/auth", authenticateRoute);
+app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/users", userRoute);
 
 // mongodb connection
 connectDB();
