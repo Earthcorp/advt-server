@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./configuration/dbConfig");
 const authRoute = require("./routes/authRoute");
 const userRoute = require("./routes/userRoute");
+const advtRoute = require("./routes/advtRoute");
+const adminRoute = require("./routes/adminRoute");
 const { createAdminAccount } = require("./scripts/setup");
 
 require("dotenv").config();
@@ -14,8 +16,13 @@ const PORT = process.env.PORT || 8000;
 // middleware
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(bodyParser.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(
+  cors({
+    credentials: true,
+    origin: ["http://localhost:5173", "https://dashboard.earthcorp.in"],
+  })
+);
 
 // server test
 app.get("/", (req, res) => {
@@ -27,6 +34,8 @@ createAdminAccount();
 // routes
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);
+app.use("/api/v1/advt", advtRoute);
+app.use("/api/v1/admin", adminRoute);
 
 // mongodb connection
 connectDB();
