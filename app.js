@@ -4,7 +4,6 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./configuration/dbConfig");
 const authRoute = require("./routes/authRoute");
-const userRoute = require("./routes/userRoute");
 const advtRoute = require("./routes/advtRoute");
 const adminRoute = require("./routes/adminRoute");
 const { createAdminAccount } = require("./scripts/setup");
@@ -33,7 +32,6 @@ createAdminAccount();
 
 // routes
 app.use("/api/v1/auth", authRoute);
-app.use("/api/v1/users", userRoute);
 app.use("/api/v1/advt", advtRoute);
 app.use("/api/v1/admin", adminRoute);
 
